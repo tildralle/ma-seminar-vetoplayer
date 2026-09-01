@@ -1,3 +1,7 @@
 /.venv
 /data
 /yolk_pictures
+/yolk_pictures_2
+/pics
+testing.ipynb
+src/__pycache__
