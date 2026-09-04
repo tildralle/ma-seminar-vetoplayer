@@ -8,13 +8,17 @@ sprayer = Sprayer()
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+import time
+
 # Load Input Data
 
 print(sprayer.dye("### Loading Data... ###", "OKCYAN"))
 
+# Retrived from https://manifestoproject.wzb.eu/datasets
 manifesto_path = 'data/manifesto/MPDataset_MPDS2025a_stata14.dta'
 manifesto = pd.read_stata(manifesto_path,convert_categoricals=False, convert_missing=False)
 
+# Retrived from https://repdem.org/index.php/current-dataset/
 paged_path = 'data/paged/PAGED-basic.csv'
 paged = pd.read_csv(paged_path)
 
@@ -50,7 +54,7 @@ for n, (index, row) in enumerate(paged_case_selection.iterrows()):
     country = row.country_name
     election_date = pd.to_datetime(row.elecdate)
 
-    print("Progress: " + f"{n}/{paged_case_selection.shape[1]} " + sprayer.dye(f"({round(n/paged_case_selection.shape[1] * 100, 2)} %) ", "OKCYAN"))
+    print("Progress: " + f"{n}/{paged_case_selection.shape[0]} " + sprayer.dye(f"({round(n/paged_case_selection.shape[0] * 100, 2)} %) ", "OKCYAN"))
     print(f"Processing: {country}, {election_date.year}")
 
     print(f"Getting Meta Data...")
@@ -60,15 +64,17 @@ for n, (index, row) in enumerate(paged_case_selection.iterrows()):
     bicam = row.inst_bicam
     pos_parl = row.inst_posparl
     seat_share_lp = row.largest_party_share
+    cab_seatshare = row.cab_seatshare
 
     minority_cab = row.cab_minority
     minority_formal = row.cab_formal_minority
     cab_date_in = pd.to_datetime(row.date_in)
     cab_date_out = pd.to_datetime(row.date_out)
 
-    args = [country, election_date]
+    elec_date_str = float(f"{election_date.year}{election_date.month:02d}")
+    args = [country, elec_date_str]
     cols = []
-    column_names = ["countryname", "edate"]
+    column_names = ["countryname", "date"]
     manifesto_country_election = group_it(manifesto_case_selection, args, cols, *column_names)
 
     try:
@@ -80,7 +86,7 @@ for n, (index, row) in enumerate(paged_case_selection.iterrows()):
 
     cabinet_name = row.cab_name
     try:
-        cabinet_member = row.cab_composition1.split(",")
+        cabinet_member = row.cab_composition1.replace(" ", "").split(",")
         cabinet_member_paged_id = [int(cmid) for cmid in row.cab_composition2.split(",")]
     except AttributeError:
         cabinet_member = []
@@ -98,13 +104,13 @@ for n, (index, row) in enumerate(paged_case_selection.iterrows()):
             mid_found = False
             for id_ in mid:
                 if len(manifesto_country_election) != 0:
-                    if id_ in manifesto_country_election.party:
+                    if id_ in manifesto_country_election.party.values:
                         cabinet_member_manifesto_id.append(id_)
                         mid_found = True
-                        print(f"Manifesto ID found.")
+                        print(sprayer.success(f"Manifesto ID {id_} found."))
                         break
             if not mid_found:
-                print(f"Manifesto ID not found.")
+                print(sprayer.dye(f"Manifesto ID not found.", "WARNING"))
                 cabinet_member_manifesto_id.append(-1)
         else:
             print(f"PAGED ID {pid} has no Manifesto ID")
@@ -171,6 +177,7 @@ for n, (index, row) in enumerate(paged_case_selection.iterrows()):
             "date_out": cab_date_out,
             "minority_cab": minority_cab,
             "minority_formal": minority_formal,
+            "cab_seatshare": cab_seatshare,
             "member": cabinet_member,
             "paged_id": cabinet_member_paged_id,
             "manifesto_id": cabinet_member_manifesto_id,
