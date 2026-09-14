@@ -79,10 +79,14 @@ for n, (index, row) in enumerate(paged_case_selection.iterrows()):
 
     try:
         member_manifesto_id = [party for party, seatshare in zip(manifesto_country_election.party, manifesto_country_election.absseat) if seatshare > 0]
-        member_names = [party for party, seatshare in zip(manifesto_country_election.partyabbrev, manifesto_country_election.absseat) if seatshare > 0]
+        member_names_seatshare = [(party, seatshare/manifesto_country_election.totseats.unique()[0]) for party, seatshare in zip(manifesto_country_election.partyabbrev, manifesto_country_election.absseat) if seatshare > 0]
+        member_names, member_seatshare = zip(*member_names_seatshare)
+        member_names = list(member_names)
+        member_seatshare = list(member_seatshare)
     except:
         member_manifesto_id = []
         member_names = []
+        member_seatshare = []
 
     cabinet_name = row.cab_name
     try:
@@ -156,6 +160,8 @@ for n, (index, row) in enumerate(paged_case_selection.iterrows()):
         "member":{
             "name": member_names,
             "manifesto_id": member_manifesto_id,
+            "seatshare": member_seatshare,
+            "stance": list(zip(parliament_eco,parliament_soc)),
             "stance_eco": parliament_eco,
             "stance_soc": parliament_soc
         },
