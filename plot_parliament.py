@@ -145,8 +145,6 @@ def plot_parliament(parliament):
 
 for key in parliament_bib.keys():
     parliament = parliament_bib[key]
-    if parliament["election_date"].year < 1995:
-        continue
 
     if parliament["country"] == country and parliament["election_date"].year == year:
         plot_parliament(parliament)
